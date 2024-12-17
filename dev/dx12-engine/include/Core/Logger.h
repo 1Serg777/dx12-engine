@@ -21,24 +21,6 @@ namespace dxe
 		static void Initialize();
 		static void Terminate();
 
-		static void PrintTestLog();
-
-		template <typename ...Args>
-		static void LogSubsystemMessage(std::string_view format, Args&& ...args)
-		{
-			spdlog::info(fmt::format(
-				fmt::bg(fmt::terminal_color::black) |
-				fmt::fg(fmt::color::burly_wood) |
-				fmt::emphasis::bold, format.data(), std::forward<args>(args)...));
-		}
-		static void LogSubsystemMessage(std::string_view msg)
-		{
-			spdlog::info(fmt::format(
-				fmt::bg(fmt::terminal_color::black) |
-				fmt::fg(fmt::color::burly_wood) |
-				fmt::emphasis::bold, msg.data()));
-		}
-
 		template <typename ...Args>
 		static void Error(std::string_view format, Args&& ...args)
 		{
