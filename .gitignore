@@ -1,0 +1,34 @@
+# Directories
+build/
+
+bin/
+bin-int/
+
+x86/
+x64/
+
+[Dd]ebug/
+[Rr]elease/
+
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+[Bb]in/
+[Oo]bj/
+
+.vs/
+
+# Files
+.sln
+.vcxproj
+.filters
+.user
+
+.obj
+.idb
+.pdb
+.log
+.ilk
+.recipe
+.tlog
