@@ -49,7 +49,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::KEYBOARD_KEY;
+		static constexpr CallbackType EventType = CallbackType::KEYBOARD_KEY;
 		using Callable = std::function<void(const KeyboardKeyCallbackData&)>;
 
 		KeyboardKeyCallbackData()
@@ -65,7 +65,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::MOUSE_BUTTON;
+		static constexpr CallbackType EventType = CallbackType::MOUSE_BUTTON;
 		using Callable = std::function<void(const MouseButtonCallbackData&)>;
 
 		MouseButtonCallbackData()
@@ -79,7 +79,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::MOUSE_SCROLL;
+		static constexpr CallbackType EventType = CallbackType::MOUSE_SCROLL;
 		using Callable = std::function<void(const MouseScrollCallbackData&)>;
 
 		MouseScrollCallbackData()
@@ -92,7 +92,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::MOUSE_POS;
+		static constexpr CallbackType EventType = CallbackType::MOUSE_POS;
 		using Callable = std::function<void(const MousePosCallbackData&)>;
 
 		MousePosCallbackData()
@@ -106,7 +106,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::WINDOW_RESIZE;
+		static constexpr CallbackType EventType = CallbackType::WINDOW_RESIZE;
 		using Callable = std::function<void(const WindowResizeCallbackData&)>;
 
 		WindowResizeCallbackData()
@@ -120,7 +120,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::FRAMEBUFFER_RESIZE;
+		static constexpr CallbackType EventType = CallbackType::FRAMEBUFFER_RESIZE;
 		using Callable = std::function<void(const FramebufferResizeCallbackData&)>;
 
 		FramebufferResizeCallbackData()
@@ -134,7 +134,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::WINDOW_CLOSE;
+		static constexpr CallbackType EventType = CallbackType::WINDOW_CLOSE;
 		using Callable = std::function<void(const WindowCloseCallbackData&)>;
 
 		WindowCloseCallbackData()
@@ -147,7 +147,7 @@ namespace dxe
 	{
 	public:
 
-		static constexpr CallbackType Type = CallbackType::CRITICAL_ASSETS_LOADED;
+		static constexpr CallbackType EventType = CallbackType::CRITICAL_ASSETS_LOADED;
 		using Callable = std::function<void(const CriticalAssetsLoadedCallbackData&)>;
 
 		CriticalAssetsLoadedCallbackData()

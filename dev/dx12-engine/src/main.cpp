@@ -1,38 +1,27 @@
-#include "Core/Logger.h"
-#include "Events/EventRegistry.h"
-#include "Window/WindowWin32.h"
+#include "GpuApi/Dx12/Dx12App.h"
 
 #include <cstdlib>
-#include <functional>
+#include <iostream>
+#include <stdexcept>
+
+using namespace dxe;
 
 int main()
 {
-	dxe::Logger::Initialize();
-	dxe::Logger::Info("Hello DX12 Engine!");
+	Dx12App app{};
 
-	dxe::EventRegistry eventRegistry{};
-
-	dxe::WindowSettings defWindowSettings{};
-	dxe::WindowWin32 window{ defWindowSettings };
-	window.SetEventRegistry(&eventRegistry);
-	window.InitializeWin32WindowParams();
-	window.CreateWin32Window();
-	window.SetWindowVisibility(true);
-
-	bool appIsRunning{ false };
-	auto closeEventCallback = [&appIsRunning](const dxe::WindowCloseCallbackData& data) {
-		appIsRunning = false;
-	};
-
-	eventRegistry.RegisterCallback<dxe::WindowCloseCallbackData>(closeEventCallback);
-
-	appIsRunning = true;
-	while (appIsRunning)
+	try
 	{
-		window.Tick();
-		eventRegistry.Tick();
+		app.Initialize();
+		app.Run();
+	}
+	catch (std::runtime_error& re)
+	{
+		std::cerr << re.what() << std::endl;
+		app.Terminate();
+		return EXIT_FAILURE;
 	}
 
-	dxe::Logger::Terminate();
+	app.Terminate();
 	return EXIT_SUCCESS;
 }

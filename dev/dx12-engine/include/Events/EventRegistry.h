@@ -36,6 +36,13 @@ namespace dxe
 				}
 			}
 		}
+		void NotifyAll(const CallbackData& callbackData)
+		{
+			for (auto& callback : callbacks)
+			{
+				callback.Invoke(callback);
+			}
+		}
 
 		void ClearCallbacks() override
 		{
@@ -61,7 +68,7 @@ namespace dxe
 		template<typename CallbackData>
 		int RegisterCallback(typename CallbackData::Callable callable)
 		{
-			CallbackType type = CallbackData::Type;
+			CallbackType type = CallbackData::EventType;
 			int typeIdx = static_cast<int>(type);
 
 			Callback<CallbackData> callback{ callable };
@@ -83,7 +90,7 @@ namespace dxe
 		template<typename CallbackData>
 		void NotifyCallbackEvent(const CallbackData& callbackData)
 		{
-			CallbackType type = CallbackData::Type;
+			CallbackType type = CallbackData::EventType;
 			int typeIdx = static_cast<int>(type);
 
 			if (!callbackStorage[typeIdx])
@@ -92,10 +99,7 @@ namespace dxe
 			std::shared_ptr<CallbackStorage<CallbackData>> typedCallbackStorage =
 				GetTypedCallbackStorage<CallbackData>();
 
-			for (auto& callback : typedCallbackStorage->callbacks)
-			{
-				callback.Invoke(callbackData);
-			}
+			typedCallbackStorage->NotifyAll(callbackData);
 		}
 
 		// Delayed notification methods
@@ -103,7 +107,7 @@ namespace dxe
 		template<typename CallbackData>
 		void NotifyCallbackEventDelayed(const CallbackData& callbackData)
 		{
-			CallbackType type = CallbackData::Type;
+			CallbackType type = CallbackData::EventType;
 			int typeIdx = static_cast<int>(type);
 
 			if (!callbackStorage[typeIdx])
@@ -123,7 +127,7 @@ namespace dxe
 		template <typename CallbackData>
 		void CreateCallbackStorage()
 		{
-			CallbackType type = CallbackData::Type;
+			CallbackType type = CallbackData::EventType;
 			int typeIdx = static_cast<int>(type);
 
 			callbackStorage[typeIdx] = std::make_shared<CallbackStorage<CallbackData>>();
@@ -132,7 +136,7 @@ namespace dxe
 		template <typename CallbackData>
 		std::shared_ptr<CallbackStorage<CallbackData>> GetTypedCallbackStorage()
 		{
-			CallbackType type = CallbackData::Type;
+			CallbackType type = CallbackData::EventType;
 			int typeIdx = static_cast<int>(type);
 
 			std::shared_ptr<CallbackStorage<CallbackData>> typedCallbackStorage =
