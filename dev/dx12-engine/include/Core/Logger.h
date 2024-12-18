@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 
+#define SPDLOG_WCHAR_TO_UTF8_SUPPORT
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bundled/color.h>
 
@@ -30,6 +31,10 @@ namespace dxe
 		{
 			spdlog::error(msg.data());
 		}
+		static void Error(std::wstring_view msg)
+		{
+			spdlog::error(msg.data());
+		}
 
 		template <typename ...Args>
 		static void Warn(std::string_view format, Args&& ...args)
@@ -40,6 +45,10 @@ namespace dxe
 		{
 			spdlog::warn(msg.data());
 		}
+		static void Warn(std::wstring_view msg)
+		{
+			spdlog::warn(msg.data());
+		}
 
 		template <typename ...Args>
 		static void Info(std::string_view format, Args&& ...args)
@@ -47,6 +56,10 @@ namespace dxe
 			spdlog::info(format.data(), std::forward<Args>(args)...);
 		}
 		static void Info(std::string_view msg)
+		{
+			spdlog::info(msg.data());
+		}
+		static void Info(std::wstring_view msg)
 		{
 			spdlog::info(msg.data());
 		}

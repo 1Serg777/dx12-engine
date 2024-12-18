@@ -23,6 +23,21 @@ namespace dxe
 	{
 	}
 
+	std::string WinAPIError::CreateWinAPIError(
+		const char* file, const char* function, uint32_t line, const char* message) const
+	{
+		std::stringstream errorStream{};
+
+		errorStream << "********** Win32 API ERROR **********\n"
+			<< "[FILE]: " << file << "\n"
+			<< "[FUNCTION]: " << function << "\n"
+			<< "[LINE]: " << line << "\n"
+			<< "[USER MESSAGE]: " << message << "\n"
+			<< "[SYSTEM MESSAGE]: " << RetrieveSystemErrorMessage();
+
+		return errorStream.str();
+	}
+
 	std::string WinAPIError::RetrieveSystemErrorMessage() const
 	{
 		DWORD dwError = GetLastError();
@@ -47,18 +62,31 @@ namespace dxe
 
 		return errMsg;
 	}
+	
+	// DX12Error
+	
+	DX12Error::DX12Error()
+		: Error("Unknown DX12 error!")
+	{
+	}
+	DX12Error::DX12Error(const char* message)
+		: Error(message)
+	{
+	}
+	DX12Error::DX12Error(const char* file, const char* function, int line, const char* message)
+		: Error(CreateDX12Error(file, function, line, message))
+	{
+	}
 
-	std::string WinAPIError::CreateWinAPIError(
-		const char* file, const char* function, uint32_t line, const char* message) const
+	std::string DX12Error::CreateDX12Error(const char* file, const char* function, uint32_t line, const char* message) const
 	{
 		std::stringstream errorStream{};
 
-		errorStream << "********** Win32 API ERROR **********\n"
+		errorStream << "********** DX12 API ERROR **********\n"
 			<< "[FILE]: " << file << "\n"
 			<< "[FUNCTION]: " << function << "\n"
 			<< "[LINE]: " << line << "\n"
-			<< "[USER MESSAGE]: " << message << "\n"
-			<< "[SYSTEM MESSAGE]: " << RetrieveSystemErrorMessage();
+			<< "[USER MESSAGE]: " << message << "\n";
 
 		return errorStream.str();
 	}

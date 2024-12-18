@@ -17,6 +17,10 @@ namespace dxe
 	if (x == NULL)\
 		throw WinAPIError(THIS_FILE, THIS_FUNCTION, THIS_LINE, message)
 
+#define DX12_THROW_IF_NOT_SUCCESS(hr, message)\
+	if (!SUCCEEDED(hr))\
+		throw DX12Error(THIS_FILE, THIS_FUNCTION, THIS_LINE, message)
+
 	class Error : public std::exception
 	{
 	public:
@@ -48,9 +52,25 @@ namespace dxe
 
 	private:
 
-		std::string RetrieveSystemErrorMessage() const;
-
 		std::string CreateWinAPIError(
+			const char* file, const char* function, uint32_t line, const char* message) const;
+
+		std::string RetrieveSystemErrorMessage() const;
+	};
+
+	class DX12Error : public Error
+	{
+	public:
+
+		DX12Error();
+		DX12Error(const char* message);
+		DX12Error(const char* file, const char* function, int line, const char* message);
+
+		virtual ~DX12Error() NOEXCEPT = default;
+
+	private:
+
+		std::string CreateDX12Error(
 			const char* file, const char* function, uint32_t line, const char* message) const;
 	};
 }

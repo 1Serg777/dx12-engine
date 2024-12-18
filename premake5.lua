@@ -29,7 +29,10 @@ project ( "dx12-engine" )
    }
 
    links {
-      "spdlog"
+      "spdlog",
+      "d3d12.lib",
+      "dxgi.lib",
+      "d3dcompiler.lib"
    }
 
    files {
