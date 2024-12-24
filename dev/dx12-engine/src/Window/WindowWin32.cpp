@@ -40,7 +40,7 @@ namespace dxe
 			windowRect.left, windowRect.top, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
 			NULL, NULL, GetModuleHandle(nullptr), this);
 
-		WINAPI_NULL_VALUE_ERROR(this->hWnd, "HWND handle was NULL!");
+		WINAPI_THROW_IF_NULL(this->hWnd, "HWND handle was NULL!");
 	}
 
 	void WindowWin32::SetWindowVisibility(bool showWindow)
@@ -87,7 +87,7 @@ namespace dxe
 		wc.lpszClassName = windowSettings.windowTitle.c_str();
 		wc.hIconSm = NULL; // The same as the hIcon member
 
-		WINAPI_ZERO_VALUE_ERROR(RegisterClassExA(&wc), "WNDCLASSEXA couldn't be created!");
+		WINAPI_THROW_IF_NULL(RegisterClassExA(&wc), "WNDCLASSEXA couldn't be created!");
 
 		// The name of the window class is the same as the window title.
 	}

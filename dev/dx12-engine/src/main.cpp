@@ -15,7 +15,7 @@ int main()
 		app.Initialize();
 		app.Run();
 	}
-	catch (std::runtime_error& re)
+	catch (std::exception& re)
 	{
 		std::cerr << re.what() << std::endl;
 		app.Terminate();

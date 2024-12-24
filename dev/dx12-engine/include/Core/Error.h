@@ -9,11 +9,7 @@
 
 namespace dxe
 {
-#define WINAPI_ZERO_VALUE_ERROR(x, message)\
-	if (x == 0)\
-		throw WinAPIError(THIS_FILE, THIS_FUNCTION, THIS_LINE, message)
-
-#define WINAPI_NULL_VALUE_ERROR(x, message)\
+#define WINAPI_THROW_IF_NULL(x, message)\
 	if (x == NULL)\
 		throw WinAPIError(THIS_FILE, THIS_FUNCTION, THIS_LINE, message)
 
