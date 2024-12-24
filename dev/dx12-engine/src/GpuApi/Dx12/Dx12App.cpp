@@ -57,6 +57,9 @@ namespace dxe
 		{
 			window->Tick();
 			eventRegistry->Tick();
+
+			Render();
+			WaitForFrameToFinish();
 		}
 
 		// Logger::Info("Done!");
@@ -102,6 +105,57 @@ namespace dxe
 		CreateSwapChain();
 		CreateDescriptorHeaps();
 		CreateFrameResources();
+
+		CreateSynchronizationObjects();
+	}
+
+	void Dx12App::Render()
+	{
+		DX12_THROW_IF_NOT_SUCCESS(
+			commandAllocator->Reset(),
+			"Failed to reset the command allocator!");
+
+		DX12_THROW_IF_NOT_SUCCESS(
+			graphicsCommandList->Reset(commandAllocator.Get(), nullptr),
+			"Failed to reset the graphics command list!");
+
+		graphicsCommandList->RSSetViewports(1, &viewport);
+		graphicsCommandList->RSSetScissorRects(1, &scissorRect);
+
+		D3D12_RESOURCE_BARRIER renderTargetBarrier{};
+		renderTargetBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		renderTargetBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		renderTargetBarrier.Transition.pResource = swapChainBuffers[frameBufferIndex].Get();
+		renderTargetBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		renderTargetBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;	
+		renderTargetBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		graphicsCommandList->ResourceBarrier(1, &renderTargetBarrier);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetDescriptorHandle(frameBufferIndex);
+		graphicsCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+		graphicsCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+		D3D12_RESOURCE_BARRIER presentBarrier{};
+		presentBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		presentBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		presentBarrier.Transition.pResource = swapChainBuffers[frameBufferIndex].Get();
+		presentBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		presentBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		presentBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		graphicsCommandList->ResourceBarrier(1, &presentBarrier);
+
+		DX12_THROW_IF_NOT_SUCCESS(
+			graphicsCommandList->Close(),
+			"Failed to close the graphics command list!");
+
+		ID3D12CommandList* ppCommandLists[] = { graphicsCommandList.Get() };
+		commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+		DX12_THROW_IF_NOT_SUCCESS(
+			swapChain->Present(1, 0),
+			"Failed to present a swap chain image!");
 	}
 
 	void Dx12App::CreateFactory(UINT factoryFlags)
@@ -434,6 +488,61 @@ namespace dxe
 				nullptr,
 				rtvHeap->GetDescriptorHandle(frameIdx));
 		}
+	}
+
+	void Dx12App::CreateSynchronizationObjects()
+	{
+		DX12_THROW_IF_NOT_SUCCESS(
+			device->CreateFence(
+				0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf())),
+			"Failed to create a Fence object!");
+
+		fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		WINAPI_THROW_IF_NULL(fenceEvent, "Failed to create a Fence Event!");
+
+		// fenceValue++;
+		fenceValue = 1;
+	}
+
+	void Dx12App::WaitForFrameToFinish()
+	{
+		const UINT64 fv = fenceValue;
+
+		DX12_THROW_IF_NOT_SUCCESS(
+			commandQueue->Signal(fence.Get(), fv),
+			"Failed to signal a fence value!");
+
+		fenceValue++;
+
+		if (fence->GetCompletedValue() < fv)
+		{
+			DX12_THROW_IF_NOT_SUCCESS(
+				fence->SetEventOnCompletion(fv, fenceEvent),
+				"Couldn't set the fence event!");
+
+			WaitForSingleObject(fenceEvent, INFINITE);
+		}
+
+		frameBufferIndex = swapChain->GetCurrentBackBufferIndex();
+	}
+
+	void Dx12App::CreateViewport()
+	{
+		viewport.TopLeftX = 0.0f;
+		viewport.TopLeftY = 0.0f;
+
+		viewport.Width = static_cast<float>(window->GetWindowWidth());
+		viewport.Height = static_cast<float>(window->GetWindowHeight());
+
+		viewport.MinDepth = D3D12_MIN_DEPTH;
+		viewport.MaxDepth = D3D12_MAX_DEPTH;
+	}
+	void Dx12App::CreateScissors()
+	{
+		scissorRect.left = 0;
+		scissorRect.right = static_cast<LONG>(window->GetWindowWidth());
+		scissorRect.top = 0;
+		scissorRect.bottom = static_cast<LONG>(window->GetWindowHeight());
 	}
 
 	void Dx12App::OnWindowClose(const WindowCloseCallbackData& callbackData)

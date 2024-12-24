@@ -31,6 +31,8 @@ namespace dxe
 
 		void InitializeDx12();
 
+		void Render();
+
 		void CreateFactory(UINT factoryFlags);
 
 #if defined(DEBUG) || defined(_DEBUG)
@@ -59,6 +61,12 @@ namespace dxe
 
 		void CreateFrameResources();
 
+		void CreateSynchronizationObjects();
+		void WaitForFrameToFinish();
+
+		void CreateViewport();
+		void CreateScissors();
+
 		void OnWindowClose(const WindowCloseCallbackData& callbackData);
 
 		static void DebugMessenger(
@@ -69,6 +77,9 @@ namespace dxe
 			void* pContext);
 
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> swapChainBuffers;
+
+		D3D12_VIEWPORT viewport{};
+		D3D12_RECT scissorRect{};
 
 		std::shared_ptr<EventRegistry> eventRegistry;
 		std::shared_ptr<WindowWin32> window;
@@ -90,6 +101,10 @@ namespace dxe
 		Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
 
 		std::shared_ptr<Dx12DescriptorHeap> rtvHeap;
+		
+		Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+		HANDLE fenceEvent{ NULL };
+		uint64_t fenceValue{ 0 };
 
 		DWORD callbackCookie{ 0 };
 

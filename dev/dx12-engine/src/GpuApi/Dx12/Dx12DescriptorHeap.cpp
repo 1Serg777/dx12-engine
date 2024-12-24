@@ -17,7 +17,7 @@ namespace dxe
 	void Dx12DescriptorHeap::Initialize(ID3D12Device* device)
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
-		rtvHeapDesc.NumDescriptors = descriptorCount;
+		rtvHeapDesc.NumDescriptors = static_cast<UINT>(descriptorCount);
 		rtvHeapDesc.Type = descriptorHeapType;
 		rtvHeapDesc.Flags = descriptorHeapFlags;
 
