@@ -2,6 +2,8 @@
 
 #include "Core/Error.h"
 
+#include <cassert>
+
 namespace dxe
 {
 	Dx12DescriptorHeap::Dx12DescriptorHeap(
@@ -33,8 +35,12 @@ namespace dxe
 
 	D3D12_CPU_DESCRIPTOR_HANDLE Dx12DescriptorHeap::GetDescriptorHandle(size_t descriptorIndex)
 	{
+		assert(descriptorIndex < descriptorCount && "Invalid descriptor index was provided!");
+
+		size_t idx = descriptorIndex % descriptorCount;
+
 		D3D12_CPU_DESCRIPTOR_HANDLE heapHandle = heapStartHandle;
-		heapHandle.ptr += descriptorIndex * descriptorSize;
+		heapHandle.ptr += idx * descriptorSize;
 		return heapHandle;
 	}
 }

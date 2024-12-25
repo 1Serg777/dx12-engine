@@ -492,36 +492,14 @@ namespace dxe
 
 	void Dx12App::CreateSynchronizationObjects()
 	{
-		DX12_THROW_IF_NOT_SUCCESS(
-			device->CreateFence(
-				0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.ReleaseAndGetAddressOf())),
-			"Failed to create a Fence object!");
-
-		fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		WINAPI_THROW_IF_NULL(fenceEvent, "Failed to create a Fence Event!");
-
-		// fenceValue++;
-		fenceValue = 1;
+		frameCompletedFence = std::make_shared<Dx12Fence>();
+		frameCompletedFence->Initialize(device.Get());
 	}
 
 	void Dx12App::WaitForFrameToFinish()
 	{
-		const UINT64 fv = fenceValue;
-
-		DX12_THROW_IF_NOT_SUCCESS(
-			commandQueue->Signal(fence.Get(), fv),
-			"Failed to signal a fence value!");
-
-		fenceValue++;
-
-		if (fence->GetCompletedValue() < fv)
-		{
-			DX12_THROW_IF_NOT_SUCCESS(
-				fence->SetEventOnCompletion(fv, fenceEvent),
-				"Couldn't set the fence event!");
-
-			WaitForSingleObject(fenceEvent, INFINITE);
-		}
+		frameCompletedFence->SignalOnGpu(commandQueue.Get());
+		frameCompletedFence->WaitForFenceEvent();
 
 		frameBufferIndex = swapChain->GetCurrentBackBufferIndex();
 	}

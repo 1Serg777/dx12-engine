@@ -5,6 +5,7 @@
 #include "Window/WindowWin32.h"
 
 #include "GpuApi/Dx12/Dx12DescriptorHeap.h"
+#include "GpuApi/Dx12/Dx12Fence.h"
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -102,9 +103,7 @@ namespace dxe
 
 		std::shared_ptr<Dx12DescriptorHeap> rtvHeap;
 		
-		Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-		HANDLE fenceEvent{ NULL };
-		uint64_t fenceValue{ 0 };
+		std::shared_ptr<Dx12Fence> frameCompletedFence;
 
 		DWORD callbackCookie{ 0 };
 
