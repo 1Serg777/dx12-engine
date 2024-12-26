@@ -3,6 +3,10 @@
 #include "Core/Logger.h"
 #include "Core/Error.h"
 
+#include "GpuApi/Dx12/Dx12Barrier.h"
+#include "Renderer/Dx12/Dx12Shader.h"
+#include "Renderer/Dx12/Dx12Vertex.h"
+
 #include <functional>
 
 using namespace Microsoft::WRL;
@@ -107,6 +111,8 @@ namespace dxe
 		CreateFrameResources();
 
 		CreateSynchronizationObjects();
+
+		LoadAssets();
 	}
 
 	void Dx12App::Render()
@@ -122,13 +128,9 @@ namespace dxe
 		graphicsCommandList->RSSetViewports(1, &viewport);
 		graphicsCommandList->RSSetScissorRects(1, &scissorRect);
 
-		D3D12_RESOURCE_BARRIER renderTargetBarrier{};
-		renderTargetBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		renderTargetBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		renderTargetBarrier.Transition.pResource = swapChainBuffers[frameBufferIndex].Get();
-		renderTargetBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		renderTargetBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;	
-		renderTargetBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		D3D12_RESOURCE_BARRIER renderTargetBarrier =
+			Dx12Barrier::CreatePresentToRenderTargetTransitionBarrier(
+				swapChainBuffers[frameBufferIndex].Get());
 		graphicsCommandList->ResourceBarrier(1, &renderTargetBarrier);
 
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetDescriptorHandle(frameBufferIndex);
@@ -137,13 +139,9 @@ namespace dxe
 		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 		graphicsCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
-		D3D12_RESOURCE_BARRIER presentBarrier{};
-		presentBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		presentBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		presentBarrier.Transition.pResource = swapChainBuffers[frameBufferIndex].Get();
-		presentBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		presentBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-		presentBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		D3D12_RESOURCE_BARRIER presentBarrier =
+			Dx12Barrier::CreateRenderTargetToPresentTransitionBarrier(
+				swapChainBuffers[frameBufferIndex].Get());
 		graphicsCommandList->ResourceBarrier(1, &presentBarrier);
 
 		DX12_THROW_IF_NOT_SUCCESS(
@@ -496,6 +494,61 @@ namespace dxe
 		frameCompletedFence->Initialize(device.Get());
 	}
 
+	void Dx12App::LoadAssets()
+	{
+		// Create Root Signature
+
+		rootSignature = std::make_shared<Dx12RootSignature>();
+		rootSignature->CreateRootSignature(device.Get());
+
+		// Create Graphics Pipeline State Object
+
+		graphicsPSO = std::make_shared<Dx12GraphicsPSO>();
+
+		graphicsPSO->SetRootSignature(rootSignature);
+
+		// Shaders
+
+		Dx12ShaderData vertexShader{};
+		vertexShader.shaderPath = std::filesystem::path{ L"resource/shaders/color_shader.hlsl" };
+		vertexShader.entryPoint = std::string{ "VSMain" };
+		vertexShader.shaderType = SHADER_TYPE::VERTEX_SHADER;
+
+		Dx12ShaderFactory::CreateVertexShader(vertexShader);
+
+		Dx12ShaderData fragmentShader;
+		fragmentShader.shaderPath = std::filesystem::path{ "resource/shaders/color_shader.hlsl" };
+		fragmentShader.entryPoint = std::string{ "PSMain" };
+		fragmentShader.shaderType = SHADER_TYPE::FRAGMENT_SHADER;
+
+		Dx12ShaderFactory::CreatePixelShader(fragmentShader);
+
+		// Input Layout
+
+		graphicsPSO->SetInputLayout(VertexAttribLayoutToDx12AttribLayout(VertexPC::attributes));
+
+		// Fixed function states
+
+		graphicsPSO->SetVertexShader(vertexShader);
+		graphicsPSO->SetPixelShader(fragmentShader);
+
+		graphicsPSO->SetRasterizerState(Dx12GraphicsPSO::CreateDefaultRasterizerState());
+		graphicsPSO->SetBlendState(Dx12GraphicsPSO::CreateDefaultBlendState());
+
+		graphicsPSO->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+
+		graphicsPSO->SetRTVCount(1);
+		graphicsPSO->SetRTVFormat(DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+
+		graphicsPSO->SetDepthStencilState(Dx12GraphicsPSO::CreateNoDepthNoStencilDepthStencilDesc());
+
+		graphicsPSO->SetMultiSampleState(Dx12GraphicsPSO::CreateSingleSampleSampleDesc());
+
+		// Compile PSO
+
+		graphicsPSO->CreateGraphicsPSO(device.Get());
+	}
+
 	void Dx12App::WaitForFrameToFinish()
 	{
 		frameCompletedFence->SignalOnGpu(commandQueue.Get());
@@ -504,7 +557,7 @@ namespace dxe
 		frameBufferIndex = swapChain->GetCurrentBackBufferIndex();
 	}
 
-	void Dx12App::CreateViewport()
+	void Dx12App::ResizeViewport()
 	{
 		viewport.TopLeftX = 0.0f;
 		viewport.TopLeftY = 0.0f;
@@ -515,7 +568,7 @@ namespace dxe
 		viewport.MinDepth = D3D12_MIN_DEPTH;
 		viewport.MaxDepth = D3D12_MAX_DEPTH;
 	}
-	void Dx12App::CreateScissors()
+	void Dx12App::ResizeScissors()
 	{
 		scissorRect.left = 0;
 		scissorRect.right = static_cast<LONG>(window->GetWindowWidth());

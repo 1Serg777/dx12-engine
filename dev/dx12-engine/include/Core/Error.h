@@ -17,6 +17,9 @@ namespace dxe
 	if (!SUCCEEDED(hr))\
 		throw DX12Error(THIS_FILE, THIS_FUNCTION, THIS_LINE, message)
 
+#define THROW_DX12_ERROR(message)\
+	throw DX12Error(THIS_FILE, THIS_FUNCTION, THIS_LINE, message)
+
 	class Error : public std::exception
 	{
 	public:

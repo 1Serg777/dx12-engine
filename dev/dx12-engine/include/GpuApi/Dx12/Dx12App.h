@@ -6,6 +6,8 @@
 
 #include "GpuApi/Dx12/Dx12DescriptorHeap.h"
 #include "GpuApi/Dx12/Dx12Fence.h"
+#include "GpuApi/Dx12/Dx12PSO.h"
+#include "GpuApi/Dx12/Dx12RootSignature.h"
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -63,10 +65,13 @@ namespace dxe
 		void CreateFrameResources();
 
 		void CreateSynchronizationObjects();
+
+		void LoadAssets();
+
 		void WaitForFrameToFinish();
 
-		void CreateViewport();
-		void CreateScissors();
+		void ResizeViewport();
+		void ResizeScissors();
 
 		void OnWindowClose(const WindowCloseCallbackData& callbackData);
 
@@ -104,6 +109,9 @@ namespace dxe
 		std::shared_ptr<Dx12DescriptorHeap> rtvHeap;
 		
 		std::shared_ptr<Dx12Fence> frameCompletedFence;
+
+		std::shared_ptr<Dx12RootSignature> rootSignature;
+		std::shared_ptr<Dx12GraphicsPSO> graphicsPSO;
 
 		DWORD callbackCookie{ 0 };
 
