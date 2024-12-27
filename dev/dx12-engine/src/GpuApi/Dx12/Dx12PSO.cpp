@@ -6,15 +6,6 @@ using namespace Microsoft::WRL;
 
 namespace dxe
 {
-	ID3D12PipelineState* Dx12PSO::GetPipelineState() const
-	{
-		return pipelineState.Get();
-	}
-	ID3D12RootSignature* Dx12PSO::GetRootSignature() const
-	{
-		return rootSignature.Get();
-	}
-
     D3D12_SHADER_BYTECODE Dx12PSO::CreateShaderBytecode(const Dx12ShaderData& shaderData) const
     {
         D3D12_SHADER_BYTECODE shaderBytecode{};
@@ -182,10 +173,23 @@ namespace dxe
         this->rootSignature = rootSignature;
         psoDesc.pRootSignature = this->rootSignature->GetRootSignature();
     }
+    ID3D12RootSignature* Dx12GraphicsPSO::GetRootSignature() const
+    {
+        return rootSignature->GetRootSignature();
+    }
+
+    ID3D12PipelineState* Dx12GraphicsPSO::GetPipelineState() const
+    {
+        return pipelineState.Get();
+    }
 
     void Dx12GraphicsPSO::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology)
     {
         psoDesc.PrimitiveTopologyType = primitiveTopology;
+    }
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE Dx12GraphicsPSO::GetPrimitiveTopology() const
+    {
+        return this->psoDesc.PrimitiveTopologyType;
     }
 
     void Dx12GraphicsPSO::SetRTVCount(uint32_t rtvCount)

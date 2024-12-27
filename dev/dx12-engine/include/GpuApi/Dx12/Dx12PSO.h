@@ -19,15 +19,12 @@ namespace dxe
 	{
 	public:
 
-		ID3D12PipelineState* GetPipelineState() const;
-		ID3D12RootSignature* GetRootSignature() const;
+		virtual ID3D12PipelineState* GetPipelineState() const = 0;
+		virtual ID3D12RootSignature* GetRootSignature() const = 0;
 
 	protected:
 
 		D3D12_SHADER_BYTECODE CreateShaderBytecode(const Dx12ShaderData& shaderData) const;
-
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 	};
 
 	class Dx12GraphicsPSO : public Dx12PSO
@@ -55,8 +52,12 @@ namespace dxe
 		void SetBlendState(const D3D12_BLEND_DESC& blendDesc);
 
 		void SetRootSignature(std::shared_ptr<Dx12RootSignature> rootSignature);
+		ID3D12RootSignature* GetRootSignature() const override;
+
+		virtual ID3D12PipelineState* GetPipelineState() const override;
 
 		void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopology);
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE GetPrimitiveTopology() const;
 
 		void SetRTVCount(uint32_t rtvCount);
 		void SetRTVFormat(DXGI_FORMAT rtvFormat, uint32_t rtvIdx);
@@ -77,6 +78,8 @@ namespace dxe
 		std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout;
 
 		std::shared_ptr<Dx12RootSignature> rootSignature;
+
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 	};
 
 	class Dx12ComputePSO : public Dx12PSO

@@ -90,6 +90,9 @@ namespace dxe
 		std::shared_ptr<EventRegistry> eventRegistry;
 		std::shared_ptr<WindowWin32> window;
 
+		D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+		Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer;
+
 #if defined(DEBUG) || defined(_DEBUG)
 		Microsoft::WRL::ComPtr<ID3D12Debug6> debugLayer;
 		Microsoft::WRL::ComPtr<ID3D12InfoQueue1> infoQueue;

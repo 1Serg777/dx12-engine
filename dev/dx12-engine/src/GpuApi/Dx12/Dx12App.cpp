@@ -8,6 +8,7 @@
 #include "Renderer/Dx12/Dx12Vertex.h"
 
 #include <functional>
+#include <vector>
 
 using namespace Microsoft::WRL;
 
@@ -107,6 +108,10 @@ namespace dxe
 		this->frameBufferCount = 2;
 		swapChainBuffers.resize(this->frameBufferCount);
 		CreateSwapChain();
+
+		ResizeViewport();
+		ResizeScissors();
+
 		CreateDescriptorHeaps();
 		CreateFrameResources();
 
@@ -122,9 +127,10 @@ namespace dxe
 			"Failed to reset the command allocator!");
 
 		DX12_THROW_IF_NOT_SUCCESS(
-			graphicsCommandList->Reset(commandAllocator.Get(), nullptr),
+			graphicsCommandList->Reset(commandAllocator.Get(), graphicsPSO->GetPipelineState()),
 			"Failed to reset the graphics command list!");
 
+		graphicsCommandList->SetGraphicsRootSignature(graphicsPSO->GetRootSignature());
 		graphicsCommandList->RSSetViewports(1, &viewport);
 		graphicsCommandList->RSSetScissorRects(1, &scissorRect);
 
@@ -138,6 +144,12 @@ namespace dxe
 
 		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 		graphicsCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+		// Render the vertex buffer
+
+		graphicsCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		graphicsCommandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+		graphicsCommandList->DrawInstanced(3, 1, 0, 0);
 
 		D3D12_RESOURCE_BARRIER presentBarrier =
 			Dx12Barrier::CreateRenderTargetToPresentTransitionBarrier(
@@ -496,6 +508,69 @@ namespace dxe
 
 	void Dx12App::LoadAssets()
 	{
+		// Create Vertex and Index buffers
+
+		std::vector<VertexPC> vertices
+		{
+			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+			{ {  0.0f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } }
+		};
+
+		const UINT vertexBufferSize = static_cast<UINT>(vertices.size() * VertexPC::stride);
+
+		D3D12_HEAP_PROPERTIES vbHeapProps{};
+		vbHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+		vbHeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		vbHeapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		vbHeapProps.CreationNodeMask = 0;
+		vbHeapProps.VisibleNodeMask = 0;
+
+		// D3D12_HEAP_FLAGS vbHeapFlags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
+		D3D12_HEAP_FLAGS vbHeapFlags = D3D12_HEAP_FLAG_NONE;
+
+		D3D12_RESOURCE_DESC vbResourceDesc{};
+		vbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		vbResourceDesc.Alignment = 0; // Must be 64KB for Buffers; 0 is an alias for 64KB
+		vbResourceDesc.Width = vertexBufferSize;
+		vbResourceDesc.Height = 1;
+		vbResourceDesc.DepthOrArraySize = 1;
+		vbResourceDesc.MipLevels = 1;
+		vbResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		vbResourceDesc.SampleDesc.Count = 1;
+		vbResourceDesc.SampleDesc.Quality = 0;
+		vbResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		vbResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+		DX12_THROW_IF_NOT_SUCCESS(
+			device->CreateCommittedResource(
+				&vbHeapProps,
+				vbHeapFlags,
+				&vbResourceDesc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(vertexBuffer.ReleaseAndGetAddressOf())),
+			"Failed to create a Vertex Buffer!");
+
+		// Copy the data to the vertex buffer
+
+		UINT8* vertexDataPtr{ nullptr };
+		D3D12_RANGE readRange{ 0, 0 };
+
+		DX12_THROW_IF_NOT_SUCCESS(
+			vertexBuffer->Map(
+				0, &readRange, reinterpret_cast<void**>(&vertexDataPtr)),
+			"Failed to map the Vertex Buffer!");
+
+		memcpy(vertexDataPtr, vertices.data(), vertexBufferSize);
+		vertexBuffer->Unmap(0, nullptr);
+
+		// Initialize the vertex buffer view
+
+		vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+		vertexBufferView.StrideInBytes = VertexPC::stride;
+		vertexBufferView.SizeInBytes = vertexBufferSize;
+
 		// Create Root Signature
 
 		rootSignature = std::make_shared<Dx12RootSignature>();
