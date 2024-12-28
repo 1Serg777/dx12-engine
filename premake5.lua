@@ -57,6 +57,10 @@ project ( "dx12-engine" )
          ["Include/*"] = { dx12_project_include_path .. "/**.h" },
          ["Sources/*"] = { dx12_project_src_path .. "/**.cpp" },
       }
+      
+      -- postbuildcommands {
+         -- os.execute("copy-shaders.bat")
+      -- }
 
    filter ( "system:linux" )
       defines( { "WINDOW_XCB" } )
