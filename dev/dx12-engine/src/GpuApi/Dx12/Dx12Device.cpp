@@ -38,22 +38,17 @@ namespace dxe
 		factory.Reset();
 	}
 
-	ComPtr<ID3D12CommandQueue> Dx12Device::CreateCommandQueue(
-		D3D12_COMMAND_LIST_TYPE queueType) const
+	std::shared_ptr<Dx12DirectQueue> Dx12Device::CreateDirectQueue()
 	{
-		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-		queueDesc.Type = queueType;
-
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
-
-		DX12_THROW_IF_NOT_SUCCESS(
-			device->CreateCommandQueue(
-				&queueDesc,
-				IID_PPV_ARGS(commandQueue.GetAddressOf())),
-			"Failed to create a Command Queue!");
-
-		return commandQueue;
+		std::shared_ptr<Dx12DirectQueue> directQueue = std::make_shared<Dx12DirectQueue>();
+		directQueue->InitializeCommandQueue(device.Get());
+		return directQueue;
+	}
+	std::shared_ptr<Dx12ComputeQueue> Dx12Device::CreateComputeQueue()
+	{
+		std::shared_ptr<Dx12ComputeQueue> computeQueue = std::make_shared<Dx12ComputeQueue>();
+		computeQueue->InitializeCommandQueue(device.Get());
+		return computeQueue;
 	}
 
 	ComPtr<ID3D12CommandAllocator> Dx12Device::CreateCommandAllocator(
@@ -85,13 +80,6 @@ namespace dxe
 		commandList->Close();
 
 		return commandList;
-	}
-
-	std::shared_ptr<Dx12Fence> Dx12Device::CreateFence() const
-	{
-		std::shared_ptr<Dx12Fence> fence = std::make_shared<Dx12Fence>();
-		fence->Initialize(device.Get());
-		return fence;
 	}
 
 	IDXGIFactory7* Dx12Device::GetFactory() const

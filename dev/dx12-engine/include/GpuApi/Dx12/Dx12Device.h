@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GpuApi/Dx12/Dx12Queue.h"
 #include "GpuApi/Dx12/Dx12SwapChain.h"
 #include "GpuApi/Dx12/Dx12Fence.h"
 
@@ -21,16 +22,14 @@ namespace dxe
 		void Initialize();
 		void Terminate();
 
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> CreateCommandQueue(
-			D3D12_COMMAND_LIST_TYPE queueType) const;
+		std::shared_ptr<Dx12DirectQueue> CreateDirectQueue();
+		std::shared_ptr<Dx12ComputeQueue> CreateComputeQueue();
 
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(
 			D3D12_COMMAND_LIST_TYPE allocatorType) const;
 
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> CreateGraphicsCommandList(
 			D3D12_COMMAND_LIST_TYPE cmdListType, ID3D12CommandAllocator* commandAllocator) const;
-
-		std::shared_ptr<Dx12Fence> CreateFence() const;
 
 		IDXGIFactory7* GetFactory() const;
 

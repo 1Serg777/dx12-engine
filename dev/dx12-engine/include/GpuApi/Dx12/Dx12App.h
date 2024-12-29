@@ -7,7 +7,10 @@
 #include "GpuApi/Dx12/Dx12Device.h"
 #include "GpuApi/Dx12/Dx12DescriptorHeap.h"
 #include "GpuApi/Dx12/Dx12Fence.h"
+#include "GpuApi/Dx12/Dx12Mesh.h"
 #include "GpuApi/Dx12/Dx12PSO.h"
+#include "GpuApi/Dx12/Dx12Queue.h"
+#include "GpuApi/Dx12/Dx12ResourceManager.h"
 #include "GpuApi/Dx12/Dx12RootSignature.h"
 
 #include <d3d12.h>
@@ -41,11 +44,7 @@ namespace dxe
 
 		void CreateSwapChain();
 
-		void CreateSynchronizationObjects();
-
 		void LoadAssets();
-
-		void WaitForFrameToFinish();
 
 		void ResizeViewport();
 		void ResizeScissors();
@@ -61,13 +60,18 @@ namespace dxe
 		std::unique_ptr<Dx12Device> device;
 		std::unique_ptr<Dx12SwapChain> swapChain;
 
+		std::unique_ptr<Dx12ResourceManager> resourceManager;
+
+		/*
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 		Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer;
+		*/
+		std::shared_ptr<Dx12Mesh> mesh;
 
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
+		std::shared_ptr<Dx12Queue> directQueue;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> graphicsCommandList;
-		
+
 		std::shared_ptr<Dx12Fence> frameCompletedFence;
 
 		std::shared_ptr<Dx12RootSignature> rootSignature;

@@ -5,5 +5,6 @@ namespace dxe
 	void Dx12Renderer::Initialize()
 	{
 		// TODO
+		
 	}
 }
