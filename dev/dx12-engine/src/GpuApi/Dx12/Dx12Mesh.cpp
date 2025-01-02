@@ -57,7 +57,6 @@ namespace dxe
 		heapDesc.Alignment = 0; // Which is an alias for 64 KB
 		// Automatically assigned for implicit heaps,
 		// but here we only care about buffers.
-		// 
 		// heapDesc.Flags = D3D12_HEAP_FLAG_NONE;
 		heapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
 		heapDesc.Properties = heapProps;
@@ -70,16 +69,24 @@ namespace dxe
 
 	void Dx12Mesh::CreateVertexBuffer(ID3D12Device* device, const void* vertSrcData, size_t vertexSize, size_t vertexBufferSize)
 	{
+		Dx12BufferDataDesc dataDesc{};
+		dataDesc.heapOffset = vbOffset;
+		dataDesc.srcDataPtr = vertSrcData;
+		dataDesc.elementSize = vertexSize;
+		dataDesc.bufferSize = vertexBufferSize;
+
 		vertexBuffer = std::make_unique<Dx12VertexBuffer>();
-		vertexBuffer->CreateVertexBuffer(
-			device, heap.Get(), vbOffset,
-			vertSrcData, vertexSize, vertexBufferSize);
+		vertexBuffer->CreateVertexBuffer(device, heap.Get(), dataDesc);
 	}
 	void Dx12Mesh::CreateIndexBuffer(ID3D12Device* device, const void* indexSrcData, size_t indexSize, size_t indexBufferSize)
 	{
+		Dx12BufferDataDesc dataDesc{};
+		dataDesc.heapOffset = vbOffset;
+		dataDesc.srcDataPtr = indexSrcData;
+		dataDesc.elementSize = indexSize;
+		dataDesc.bufferSize = indexBufferSize;
+
 		indexBuffer = std::make_unique<Dx12IndexBuffer>();
-		indexBuffer->CreateIndexBuffer(
-			device, heap.Get(), ibOffset,
-			indexSrcData, indexSize, indexBufferSize);
+		indexBuffer->CreateIndexBuffer(device, heap.Get(), dataDesc);
 	}
 }

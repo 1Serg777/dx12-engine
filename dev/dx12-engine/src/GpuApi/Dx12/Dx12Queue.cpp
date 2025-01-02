@@ -48,4 +48,10 @@ namespace dxe
 		CreateCommandQueue(device, D3D12_COMMAND_LIST_TYPE_COMPUTE);
 		CreateQueueFence(device);
 	}
+
+	void Dx12CopyQueue::InitializeCommandQueue(ID3D12Device* device)
+	{
+		CreateCommandQueue(device, D3D12_COMMAND_LIST_TYPE_COPY);
+		CreateQueueFence(device);
+	}
 }

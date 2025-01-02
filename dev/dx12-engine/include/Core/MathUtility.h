@@ -86,7 +86,7 @@ namespace dxe
 	}
 	inline bool operator<=(const Dimensions2D& d1, const Dimensions2D& d2)
 	{
-		return ((d1.width <= d2.width) && (d1.height <= d2.height));
+		return ((d1 == d2) || (d1 < d2));
 	}
 	inline bool operator>(const Dimensions2D& d1, const Dimensions2D& d2)
 	{
@@ -94,7 +94,7 @@ namespace dxe
 	}
 	inline bool operator>=(const Dimensions2D& d1, const Dimensions2D& d2)
 	{
-		return ((d1.width >= d2.width) && (d1.height >= d2.height));
+		return ((d1 == d2) || (d1 < d2));
 	}
 
 	template<typename T>

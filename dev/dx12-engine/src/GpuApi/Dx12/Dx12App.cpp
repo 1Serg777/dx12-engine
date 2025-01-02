@@ -3,14 +3,18 @@
 #include "Core/Logger.h"
 #include "Core/Error.h"
 
-#include "GpuApi/Dx12/Dx12Barrier.h"
-#include "Renderer/Dx12/Dx12Shader.h"
+#include "GpuApi/Dx12/Dx12CommandManager.h"
+#include "GpuApi/Dx12/Dx12Device.h"
+#include "GpuApi/Dx12/Dx12GpuApi.h"
+#include "GpuApi/Dx12/Dx12Queue.h"
+#include "GpuApi/Dx12/Dx12ResourceManager.h"
+
+#include "Renderer/Vertex.h"
+#include "Renderer/Dx12/Dx12Renderer.h"
 #include "Renderer/Dx12/Dx12Vertex.h"
 
 #include <functional>
 #include <vector>
-
-using namespace Microsoft::WRL;
 
 namespace dxe
 {
@@ -21,24 +25,20 @@ namespace dxe
 		Logger::Initialize();
 		Logger::Info("Initializing DX12 Engine...");
 
-		using namespace std::placeholders;
-
 		eventRegistry = std::make_shared<EventRegistry>();
 		eventRegistry->RegisterCallback<dxe::WindowCloseCallbackData>(
-			std::bind(&Dx12App::OnWindowClose, this, _1));
+			std::bind(&Dx12App::OnWindowClose, this, std::placeholders::_1));
 
 		InitializeWindow();
 		InitializeDx12();
+
+		LoadAssets();
 
 		Logger::Info("DX12 Engine initialization complete!");
 	}
 	void Dx12App::Terminate()
 	{
-		swapChain.reset();
-
-		device->Terminate();
-		device.reset();
-
+		TerminateDx12();
 		window.reset();
 		eventRegistry.reset();
 		Logger::Terminate();
@@ -53,7 +53,6 @@ namespace dxe
 			eventRegistry->Tick();
 
 			Render();
-			directQueue->FlushQueue();
 		}
 
 		// Logger::Info("Done!");
@@ -74,109 +73,10 @@ namespace dxe
 		Logger::Info("Win32 window initialization complete!");
 	}
 
-	void Dx12App::InitializeDx12()
-	{
-		device = std::make_unique<Dx12Device>();
-		device->Initialize();
-
-		CreateCommandObjects();
-
-		CreateSwapChain();
-
-		ResizeViewport();
-		ResizeScissors();
-
-		LoadAssets();
-	}
-
-	void Dx12App::Render()
-	{
-		DX12_THROW_IF_NOT_SUCCESS(
-			commandAllocator->Reset(),
-			"Failed to reset the command allocator!");
-
-		// 1.
-		// 
-		// It's allowed not to set a pipeline when resetting a command buffer
-		// and there's little cost to doing so.
-		/*
-		DX12_THROW_IF_NOT_SUCCESS(
-			graphicsCommandList->Reset(commandAllocator.Get(), graphicsPSO->GetPipelineState()),
-			"Failed to reset the graphics command list!");
-		*/
-
-		// 2.
-		// 
-		// But when choosing the second option don't forget to set the pipeline state object
-		// with a separate function call.
-		DX12_THROW_IF_NOT_SUCCESS(
-			graphicsCommandList->Reset(commandAllocator.Get(), nullptr),
-			"Failed to reset the graphics command list!");
-		graphicsCommandList->SetPipelineState(graphicsPSO->GetPipelineState());
-
-		graphicsCommandList->SetGraphicsRootSignature(graphicsPSO->GetRootSignature());
-		graphicsCommandList->RSSetViewports(1, &viewport);
-		graphicsCommandList->RSSetScissorRects(1, &scissorRect);
-
-		D3D12_RESOURCE_BARRIER renderTargetBarrier =
-			Dx12Barrier::CreatePresentToRenderTargetTransitionBarrier(
-				swapChain->GetCurrentBackBufferResource());
-		graphicsCommandList->ResourceBarrier(1, &renderTargetBarrier);
-
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = swapChain->GetCurrentBackBufferRTV();
-		graphicsCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
-		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-		graphicsCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-		// Render the vertex buffer
-
-		Dx12VertexBuffer* vb = mesh->GetVertexBuffer();
-		D3D12_VERTEX_BUFFER_VIEW vbView = vb->GetVertexBufferView();
-		graphicsCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		graphicsCommandList->IASetVertexBuffers(0, 1, &vbView);
-		graphicsCommandList->DrawInstanced(static_cast<UINT>(vb->GetVertexCount()), 1, 0, 0);
-
-		/*
-		graphicsCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		graphicsCommandList->IASetVertexBuffers(0, 1, &vertexBufferView);
-		graphicsCommandList->DrawInstanced(3, 1, 0, 0);
-		*/
-
-		D3D12_RESOURCE_BARRIER presentBarrier =
-			Dx12Barrier::CreateRenderTargetToPresentTransitionBarrier(
-				swapChain->GetCurrentBackBufferResource());
-		graphicsCommandList->ResourceBarrier(1, &presentBarrier);
-
-		DX12_THROW_IF_NOT_SUCCESS(
-			graphicsCommandList->Close(),
-			"Failed to close the graphics command list!");
-
-		ID3D12CommandList* ppCommandLists[] = { graphicsCommandList.Get() };
-		directQueue->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-		swapChain->Present();
-	}
-
-	void Dx12App::CreateCommandObjects()
-	{
-		directQueue = device->CreateDirectQueue();
-		commandAllocator = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT);
-		graphicsCommandList = device->CreateGraphicsCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator.Get());
-	}
-
-	void Dx12App::CreateSwapChain()
-	{
-		swapChain = std::make_unique<Dx12SwapChain>(2);
-		swapChain->CreateSwapChain(
-			device->GetDevice(),
-			device->GetFactory(),
-			directQueue->GetCommandQueue(),
-			window.get());
-	}
-
 	void Dx12App::LoadAssets()
 	{
+		Dx12GpuData* gpuData = GetDx12GpuData();
+
 		// Create Vertex and Index buffers
 
 		std::vector<VertexPC> vertices
@@ -186,17 +86,21 @@ namespace dxe
 			{ {  0.0f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } }
 		};
 
-		mesh = std::make_unique<Dx12Mesh>();
-		mesh->CreateMesh(device->GetDevice(), vertices);
+		std::shared_ptr<Dx12Mesh> mesh = std::make_shared<Dx12Mesh>();
+		mesh->CreateMesh(gpuData->device->GetDevice(), vertices);
+
+		meshId = gpuData->resourceManager->meshes.AddResource(mesh);
 
 		// Create Root Signature
 
-		rootSignature = std::make_shared<Dx12RootSignature>();
-		rootSignature->CreateRootSignature(device->GetDevice());
+		std::shared_ptr<Dx12RootSignature> rootSignature = std::make_shared<Dx12RootSignature>();
+		rootSignature->CreateRootSignature(gpuData->device->GetDevice());
+
+		rootSignatureId = gpuData->resourceManager->rootSignatures.AddResource(rootSignature);
 
 		// Create Graphics Pipeline State Object
 
-		graphicsPSO = std::make_shared<Dx12GraphicsPSO>();
+		std::shared_ptr<Dx12GraphicsPSO> graphicsPSO = std::make_shared<Dx12GraphicsPSO>();
 
 		graphicsPSO->SetRootSignature(rootSignature);
 
@@ -239,26 +143,22 @@ namespace dxe
 
 		// Compile PSO
 
-		graphicsPSO->CreateGraphicsPSO(device->GetDevice());
+		graphicsPSO->CreateGraphicsPSO(gpuData->device->GetDevice());
+		
+		graphicsPSOId = gpuData->resourceManager->graphicsPSOs.AddResource(graphicsPSO);
 	}
 
-	void Dx12App::ResizeViewport()
+	void Dx12App::Render()
 	{
-		viewport.TopLeftX = 0.0f;
-		viewport.TopLeftY = 0.0f;
+		RenderData renderData{};
+		renderData.meshId = meshId;
+		renderData.rootSignatureId = rootSignatureId;
+		renderData.graphicsPSOId = graphicsPSOId;
 
-		viewport.Width = static_cast<float>(window->GetWindowWidth());
-		viewport.Height = static_cast<float>(window->GetWindowHeight());
+		Dx12GpuData* gpuData = GetDx12GpuData();
+		gpuData->renderer->Render(renderData);
 
-		viewport.MinDepth = D3D12_MIN_DEPTH;
-		viewport.MaxDepth = D3D12_MAX_DEPTH;
-	}
-	void Dx12App::ResizeScissors()
-	{
-		scissorRect.left = 0;
-		scissorRect.right = static_cast<LONG>(window->GetWindowWidth());
-		scissorRect.top = 0;
-		scissorRect.bottom = static_cast<LONG>(window->GetWindowHeight());
+		gpuData->commandManager->GetDirectQueue()->FlushQueue();
 	}
 
 	void Dx12App::OnWindowClose(const WindowCloseCallbackData& callbackData)

@@ -8,17 +8,14 @@ namespace dxe
 	void Dx12VertexBuffer::CreateVertexBuffer(
 		ID3D12Device* device,
 		ID3D12Heap* heap,
-		uint64_t heapOffset,
-		const void* srcDataPtr,
-		size_t vertexSize,
-		size_t vertexBufferSize)
+		Dx12BufferDataDesc& dataDesc)
 	{
-		this->vertexCount = vertexBufferSize / vertexSize;
+		this->vertexCount = dataDesc.bufferSize / dataDesc.elementSize;
 
 		D3D12_RESOURCE_DESC vbResourceDesc{};
 		vbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		vbResourceDesc.Alignment = 0; // Must be 64KB for Buffers; 0 is an alias for 64KB
-		vbResourceDesc.Width = vertexBufferSize;
+		vbResourceDesc.Width = dataDesc.bufferSize;
 		vbResourceDesc.Height = 1;
 		vbResourceDesc.DepthOrArraySize = 1;
 		vbResourceDesc.MipLevels = 1;
@@ -33,7 +30,7 @@ namespace dxe
 
 		DX12_THROW_IF_NOT_SUCCESS(
 			device->CreatePlacedResource(
-				heap, heapOffset,
+				heap, dataDesc.heapOffset,
 				&vbResourceDesc,
 				initialResourceState,
 				nullptr,
@@ -50,14 +47,14 @@ namespace dxe
 				0, &readRange, reinterpret_cast<void**>(&vertexBufferDataPtr)),
 			"Failed to map the Vertex Buffer!");
 
-		memcpy(vertexBufferDataPtr, srcDataPtr, vertexBufferSize);
+		memcpy(vertexBufferDataPtr, dataDesc.srcDataPtr, dataDesc.bufferSize);
 		vertexBuffer->Unmap(0, nullptr);
 
 		// Initialize the vertex buffer view
 
 		vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-		vertexBufferView.StrideInBytes = static_cast<UINT>(vertexSize);
-		vertexBufferView.SizeInBytes = static_cast<UINT>(vertexBufferSize);
+		vertexBufferView.StrideInBytes = static_cast<UINT>(dataDesc.elementSize);
+		vertexBufferView.SizeInBytes = static_cast<UINT>(dataDesc.bufferSize);
 	}
 
 	size_t Dx12VertexBuffer::GetVertexCount() const
@@ -77,17 +74,14 @@ namespace dxe
 	void Dx12IndexBuffer::CreateIndexBuffer(
 		ID3D12Device* device,
 		ID3D12Heap* heap,
-		uint64_t heapOffset,
-		const void* srcDataPtr,
-		size_t indexSize,
-		size_t indexBufferSize)
+		Dx12BufferDataDesc& dataDesc)
 	{
-		this->indexCount = indexBufferSize / indexSize;
+		this->indexCount = dataDesc.bufferSize / dataDesc.elementSize;
 
 		D3D12_RESOURCE_DESC vbResourceDesc{};
 		vbResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		vbResourceDesc.Alignment = 0; // Must be 64KB for Buffers; 0 is an alias for 64KB
-		vbResourceDesc.Width = indexBufferSize;
+		vbResourceDesc.Width = dataDesc.bufferSize;
 		vbResourceDesc.Height = 1;
 		vbResourceDesc.DepthOrArraySize = 1;
 		vbResourceDesc.MipLevels = 1;
@@ -102,7 +96,7 @@ namespace dxe
 
 		DX12_THROW_IF_NOT_SUCCESS(
 			device->CreatePlacedResource(
-				heap, heapOffset,
+				heap, dataDesc.heapOffset,
 				&vbResourceDesc,
 				initialResourceState,
 				nullptr,
@@ -119,14 +113,14 @@ namespace dxe
 				0, &readRange, reinterpret_cast<void**>(&vertexBufferDataPtr)),
 			"Failed to map the Vertex Buffer!");
 
-		memcpy(vertexBufferDataPtr, srcDataPtr, indexBufferSize);
+		memcpy(vertexBufferDataPtr, dataDesc.srcDataPtr, dataDesc.bufferSize);
 		indexBuffer->Unmap(0, nullptr);
 
 		// Initialize the vertex buffer view
 
 		indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
 		indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-		indexBufferView.SizeInBytes = static_cast<UINT>(indexBufferSize);
+		indexBufferView.SizeInBytes = static_cast<UINT>(dataDesc.bufferSize);
 	}
 
 	size_t Dx12IndexBuffer::GetIndexCount() const

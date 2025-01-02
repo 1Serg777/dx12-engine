@@ -6,29 +6,35 @@
 
 #include <d3d12.h>
 
+#include <cstdint>
 #include <memory>
 
 #include <wrl/client.h>
 
 namespace dxe
 {
+	struct RenderData
+	{
+		uint32_t meshId{ 0 };
+		uint32_t rootSignatureId{ 0 };
+		uint32_t graphicsPSOId{ 0 };
+	};
+
 	class Dx12Renderer
 	{
 	public:
 
 		void Initialize();
+		void Terminate();
+
+		void Render(const RenderData& renderData) const;
+
+		void SetViewport(uint32_t width, uint32_t height);
+		void SetScissors(uint32_t right, uint32_t bottom);
 
 	private:
 
 		D3D12_VIEWPORT viewport{};
 		D3D12_RECT scissorRect{};
-
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> graphicsCommandList;
-
-		std::shared_ptr<Dx12Fence> frameCompletedFence;
-
-		std::shared_ptr<Dx12RootSignature> rootSignature;
-		std::shared_ptr<Dx12GraphicsPSO> graphicsPSO;
 	};
 }

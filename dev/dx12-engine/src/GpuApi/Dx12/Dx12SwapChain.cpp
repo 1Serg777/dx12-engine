@@ -86,7 +86,7 @@ namespace dxe
 		swapChainDesc.SwapEffect = swapChainEffect;
 		swapChainDesc.SampleDesc.Count = 1;
 
-		ComPtr<IDXGISwapChain1> swapChain;
+		ComPtr<IDXGISwapChain1> swapChain;	
 		HRESULT hr = factory->CreateSwapChainForHwnd(
 			commandQueue,
 			window->GetWindowHandle(),

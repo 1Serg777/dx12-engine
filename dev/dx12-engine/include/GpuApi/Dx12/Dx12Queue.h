@@ -48,4 +48,14 @@ namespace dxe
 	private:
 
 	};
+
+	class Dx12CopyQueue : public Dx12Queue
+	{
+	public:
+
+		void InitializeCommandQueue(ID3D12Device* device) override;
+
+	private:
+
+	};
 }

@@ -24,15 +24,15 @@ namespace dxe
 			const std::vector<IndexType>& indices)
 		{
 			size_t vertexSize = VertexType::stride;
-			size_t vertexDataSize = vertexSize * vertices.size();
+			size_t vertexBufferSize = vertexSize * vertices.size();
 
 			size_t indexSize = sizeof(IndexType);
-			size_t indexDataSize = indexSize * indices.size();
+			size_t indexBufferSize = indexSize * indices.size();
 
 			InitializeHeap(device, vertexSize, indexSize);
 
-			CreateVertexBuffer(device, vertices.data(), vertexSize, vertexDataSize);
-			CreateIndexBuffer(device, indices.data(), indexSize, indexDataSize);
+			CreateVertexBuffer(device, vertices.data(), vertexSize, vertexBufferSize);
+			CreateIndexBuffer(device, indices.data(), indexSize, indexBufferSize);
 		}
 
 		template<typename VertexType>
@@ -41,11 +41,11 @@ namespace dxe
 			const std::vector<VertexType>& vertices)
 		{
 			size_t vertexSize = VertexType::stride;
-			size_t vertexDataSize = vertexSize * vertices.size();
+			size_t vertexBufferSize = vertexSize * vertices.size();
 
 			InitializeHeap(device, vertexSize, 0);
 
-			CreateVertexBuffer(device, vertices.data(), vertexSize, vertexDataSize);
+			CreateVertexBuffer(device, vertices.data(), vertexSize, vertexBufferSize);
 		}
 
 		Dx12VertexBuffer* GetVertexBuffer() const;

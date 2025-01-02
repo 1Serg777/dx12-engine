@@ -414,4 +414,9 @@ namespace dxe
 
 		return DefWindowProcA(hWnd, uMsg, wParam, lParam);
 	}
+
+	WindowWin32* GetWindowWin32()
+	{
+		return windowPtr;
+	}
 }

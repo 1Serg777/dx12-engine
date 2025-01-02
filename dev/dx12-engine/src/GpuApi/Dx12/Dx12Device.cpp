@@ -24,7 +24,6 @@ namespace dxe
 		InitializeDebugCallbackFunction();
 #endif
 	}
-
 	void Dx12Device::Terminate()
 	{
 #if defined(DEBUG) || defined(_DEBUG)
@@ -36,50 +35,6 @@ namespace dxe
 		device.Reset();
 		adapter.Reset();
 		factory.Reset();
-	}
-
-	std::shared_ptr<Dx12DirectQueue> Dx12Device::CreateDirectQueue()
-	{
-		std::shared_ptr<Dx12DirectQueue> directQueue = std::make_shared<Dx12DirectQueue>();
-		directQueue->InitializeCommandQueue(device.Get());
-		return directQueue;
-	}
-	std::shared_ptr<Dx12ComputeQueue> Dx12Device::CreateComputeQueue()
-	{
-		std::shared_ptr<Dx12ComputeQueue> computeQueue = std::make_shared<Dx12ComputeQueue>();
-		computeQueue->InitializeCommandQueue(device.Get());
-		return computeQueue;
-	}
-
-	ComPtr<ID3D12CommandAllocator> Dx12Device::CreateCommandAllocator(
-		D3D12_COMMAND_LIST_TYPE allocatorType) const
-	{
-		ComPtr<ID3D12CommandAllocator> commandAllocator;
-
-		DX12_THROW_IF_NOT_SUCCESS(
-			device->CreateCommandAllocator(
-				allocatorType,
-				IID_PPV_ARGS(commandAllocator.GetAddressOf())),
-			"Failed to create a Command Allocator!");
-
-		return commandAllocator;
-	}
-
-	ComPtr<ID3D12GraphicsCommandList7> Dx12Device::CreateGraphicsCommandList(
-		D3D12_COMMAND_LIST_TYPE cmdListType, ID3D12CommandAllocator* commandAllocator) const
-	{
-		ComPtr<ID3D12GraphicsCommandList7> commandList;
-
-		DX12_THROW_IF_NOT_SUCCESS(
-			device->CreateCommandList(
-				0, cmdListType,
-				commandAllocator, nullptr,
-				IID_PPV_ARGS(commandList.GetAddressOf())),
-			"Failed to create a Graphics Command List!");
-
-		commandList->Close();
-
-		return commandList;
 	}
 
 	IDXGIFactory7* Dx12Device::GetFactory() const
@@ -147,7 +102,7 @@ namespace dxe
 		uint32_t adapterIdx{ 0 };
 		while (true)
 		{
-			ComPtr<IDXGIAdapter4> adapter;
+			ComPtr<IDXGIAdapter4> adapter;	
 
 			HRESULT hr = factory->EnumAdapterByGpuPreference(
 				adapterIdx, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
@@ -193,6 +148,11 @@ namespace dxe
 			}
 
 			adapterIdx++;
+		}
+
+		if (!this->adapter)
+		{
+			THROW_DX12_ERROR("No device supporting the feature level 12.2 was found!");
 		}
 	}
 

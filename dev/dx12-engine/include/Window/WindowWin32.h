@@ -50,4 +50,6 @@ namespace dxe
 		bool inFullscreenMode{ false };
 		bool isResizing{ false };
 	};
+
+	WindowWin32* GetWindowWin32();
 }
